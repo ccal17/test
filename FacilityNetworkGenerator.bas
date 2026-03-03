@@ -297,7 +297,12 @@ Private Sub AutoTypicalOverflowLevels(ByRef dictBuildingGroups As Object, _
             Dim dictDevices As Object
             Set dictDevices = CreateObject("Scripting.Dictionary")
 
+            ' First pass: collect device records and keys to remove
             Dim grpKey As Variant
+            Dim keysToRemove() As String
+            Dim removeCount As Long
+            removeCount = 0
+            ReDim keysToRemove(0 To dictBuildingGroups.Count - 1)
             For Each grpKey In dictBuildingGroups.Keys
                 If Left(CStr(grpKey), Len(lvlKey) + 1) = lvlKey & "|" Then
                     Dim devList As Object
@@ -312,9 +317,16 @@ Private Sub AutoTypicalOverflowLevels(ByRef dictBuildingGroups As Object, _
                             dictDevices.Add devID, rec
                         End If
                     Next d
-                    dictBuildingGroups.Remove grpKey
+                    keysToRemove(removeCount) = CStr(grpKey)
+                    removeCount = removeCount + 1
                 End If
             Next grpKey
+
+            ' Second pass: remove collected keys (cannot modify dict during For Each)
+            Dim ri As Long
+            For ri = 0 To removeCount - 1
+                dictBuildingGroups.Remove keysToRemove(ri)
+            Next ri
 
             ' Re-add devices using chain-head grouping for this level
             Dim devKey As Variant
@@ -519,12 +531,13 @@ Private Function BuildInterLevelCutCosts(ByVal sortedLevelKeys As Variant, _
     n = UBound(sortedLevelKeys) - LBound(sortedLevelKeys) + 1
 
     Dim costs() As Double
-    ReDim costs(0 To n - 2)   ' cost of cutting between level i and i+1
 
     If n < 2 Then
         BuildInterLevelCutCosts = costs
         Exit Function
     End If
+
+    ReDim costs(0 To n - 2)   ' cost of cutting between level i and i+1
 
     Dim i As Long
     For i = 0 To n - 2
@@ -647,12 +660,14 @@ Private Function PartitionLevelsIntoChunks(ByVal sortedLevelKeys As Variant, _
     ' Fall back to 1 level per page
     If dp(n) >= INF Then
         LogStep "PartitionLevelsIntoChunks", "INF bestCost – falling back to 1 level per page"
-        ReDim PartitionLevelsIntoChunks(0 To n - 1)
+        Dim fallback() As PageChunk
+        ReDim fallback(0 To n - 1)
         For i = 0 To n - 1
-            PartitionLevelsIntoChunks(i).StartIdx = i
-            PartitionLevelsIntoChunks(i).EndIdx   = i
-            PartitionLevelsIntoChunks(i).Weight   = weights(i)
+            fallback(i).StartIdx = i
+            fallback(i).EndIdx   = i
+            fallback(i).Weight   = weights(i)
         Next i
+        PartitionLevelsIntoChunks = fallback
         Exit Function
     End If
 
@@ -1214,10 +1229,8 @@ Private Function GlueConnector(ByVal oConn As Object, _
     On Error Resume Next
     GlueConnector = False
     If oConn Is Nothing Or oFrom Is Nothing Or oTo Is Nothing Then Exit Function
-    oConn.CellsU("BeginX").GlueTo oFrom.CellsU("Geometry1.X1")
-    oConn.CellsU("EndX").GlueTo   oTo.CellsU("Geometry1.X1")
-    oConn.GluedShapes 0, "", oFrom
-    oConn.GluedShapes 0, "", oTo
+    oConn.CellsU("BeginX").GlueTo oFrom.CellsU("PinX")
+    oConn.CellsU("EndX").GlueTo   oTo.CellsU("PinX")
     GlueConnector = True
     On Error GoTo 0
 End Function
@@ -1540,7 +1553,7 @@ Private Sub CleanupGeneratedPages(ByVal oDoc As Object)
         pName = UCase(oPage.Name)
         If InStr(pName, "BOUNDARY") > 0 Or InStr(pName, "RISER") > 0 Or _
            InStr(pName, "DATAFLOW") > 0 Then
-            oDoc.Pages.ItemFromID(oPage.ID).Delete
+            oPage.Delete
         End If
     Next i
     On Error GoTo 0
@@ -1649,6 +1662,10 @@ Private Function GetSortedBuildingNames(ByVal oRS As Object, _
     On Error GoTo 0
 
     Dim names() As String
+    If dictBuildings.Count = 0 Then
+        GetSortedBuildingNames = Array()
+        Exit Function
+    End If
     ReDim names(0 To dictBuildings.Count - 1)
     Dim k As Long
     Dim key As Variant
@@ -2018,6 +2035,10 @@ Private Function GetSortedLevelKeys(ByVal dictLevels As Object) As Variant
     End If
 
     Dim keys() As String
+    If dictLevels.Count = 0 Then
+        GetSortedLevelKeys = Array()
+        Exit Function
+    End If
     ReDim keys(0 To dictLevels.Count - 1)
     Dim i As Long
     Dim k As Variant
@@ -2074,6 +2095,11 @@ End Function
 Private Function GetGravitySortedKeys(ByVal dictGroups As Object, _
                                         ByVal dictNameToShape As Object) As Variant
     If dictGroups Is Nothing Then
+        GetGravitySortedKeys = Array()
+        Exit Function
+    End If
+
+    If dictGroups.Count = 0 Then
         GetGravitySortedKeys = Array()
         Exit Function
     End If
