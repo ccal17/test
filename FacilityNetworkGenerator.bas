@@ -189,10 +189,14 @@ Public Sub GenerateFacilityNetworkDiagrams()
     Exit Sub
 
 ErrHandler:
+    Dim errNum  As Long
+    Dim errDesc As String
+    errNum  = Err.Number
+    errDesc = Err.Description
     EnableBatchMode False
     If nScope <> 0 Then oDoc.EndUndoScope nScope, False
-    MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical
-    LogStep "GenerateFacilityNetworkDiagrams", "ERROR " & Err.Number & " – " & Err.Description
+    MsgBox "Error " & errNum & ": " & errDesc, vbCritical
+    LogStep "GenerateFacilityNetworkDiagrams", "ERROR " & errNum & " – " & errDesc
 End Sub
 
 ' ============================================================
