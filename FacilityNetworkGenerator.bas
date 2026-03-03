@@ -48,6 +48,8 @@ Private Const BOX_VERTICAL_OFFSET   As Double = 0.5
 Private Const PAGE3_ARROW_STYLE     As String = "4"
 Private Const CURVE_RADIUS          As String = "0.0625 in"
 Private Const CONT_BANNER_HEIGHT    As Double = 0.4
+Private Const CONT_BADGE_WIDTH      As Double = 1.5
+Private Const CONT_BADGE_RIGHT_MARGIN As Double = 0.1
 Private Const OFFPAGE_REF_SIZE      As Double = 0.3
 Private Const PAGE_NAME_SEPARATOR   As String = " – "
 Private Const INF                   As Double = 1E+30
@@ -733,13 +735,23 @@ Private Sub DrawContinuationBanner(ByVal oPage As Object, _
 
     Dim oShape As Object
     Dim pageW  As Double
+    Dim pageH  As Double
     pageW = oPage.PageSheet.Cells("PageWidth").ResultIU
+    pageH = oPage.PageSheet.Cells("PageHeight").ResultIU
 
-    Set oShape = oPage.DrawRectangle(0, 0, pageW, CONT_BANNER_HEIGHT)
+    ' Small continuation badge in the right margin, vertically centred
+    Dim badgeLeft As Double
+    Dim centY     As Double
+    badgeLeft = pageW - CONT_BADGE_WIDTH - CONT_BADGE_RIGHT_MARGIN
+    centY     = pageH / 2
+
+    Set oShape = oPage.DrawRectangle(badgeLeft, centY - CONT_BANNER_HEIGHT / 2, _
+                                     badgeLeft + CONT_BADGE_WIDTH, centY + CONT_BANNER_HEIGHT / 2)
     oShape.Text = "Page " & pageNum & " of " & totalPages
-    oShape.CellsU("FillForegnd").FormulaU = "RGB(220,230,245)"
-    oShape.CellsU("LineColor").FormulaU   = "RGB(180,180,180)"
+    oShape.CellsU("FillForegnd").FormulaU   = "RGB(220,230,245)"
+    oShape.CellsU("LineColor").FormulaU     = "RGB(180,180,180)"
     oShape.CellsU("VerticalAlign").FormulaU = "1"
+    oShape.CellsU("Rounding").FormulaU      = "0.05 in"
     On Error GoTo 0
 End Sub
 
