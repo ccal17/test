@@ -343,7 +343,7 @@ Private Sub AutoTypicalOverflowLevels(ByRef dictBuildingGroups As Object, _
 
                 If Not dictBuildingGroups.Exists(newGrpKey) Then
                     Dim newList As Object
-                    Set newList = CreateObject("Collection")
+                    Set newList = New Collection
                     dictBuildingGroups.Add newGrpKey, newList
                 End If
                 dictBuildingGroups(newGrpKey).Add devRec
@@ -814,11 +814,23 @@ Private Sub DrawSingleOffPageRef(ByVal oFrom As Object, ByVal oTo As Object, _
     arrowUp   = ChrW(9650)   ' ▲
     arrowDown = ChrW(9660)   ' ▼
 
-    ' Determine if reference is going up or down in level hierarchy
+    ' Determine direction by comparing page indices
     Dim fromPageName As String
     Dim toPageName   As String
     fromPageName = oFrom.ContainingPage.Name
     toPageName   = oTo.ContainingPage.Name
+
+    Dim fromIdx As Long
+    Dim toIdx   As Long
+    fromIdx = oFrom.ContainingPage.Index
+    toIdx   = oTo.ContainingPage.Index
+
+    Dim arrowStr As String
+    If toIdx < fromIdx Then
+        arrowStr = arrowDown
+    Else
+        arrowStr = arrowUp
+    End If
 
     ' Draw a small reference marker near the source shape
     Dim oFromPage As Object
@@ -834,7 +846,7 @@ Private Sub DrawSingleOffPageRef(ByVal oFrom As Object, ByVal oTo As Object, _
                                         refY - OFFPAGE_REF_SIZE / 2, _
                                         refX + OFFPAGE_REF_SIZE / 2, _
                                         refY + OFFPAGE_REF_SIZE / 2)
-    oRef.Text = arrowUp & " " & toPageName
+    oRef.Text = arrowStr & " " & toPageName
     oRef.CellsU("FillForegnd").FormulaU = "RGB(255,255,200)"
     oRef.CellsU("LineColor").FormulaU   = "RGB(180,150,0)"
 
@@ -1651,10 +1663,12 @@ Private Function GetSortedBuildingNames(ByVal oRS As Object, _
             Dim rowData As Variant
             rowData = oRS.GetRowData(rowIDs(i))
             If IsArray(rowData) And cols.Location >= 0 Then
-                Dim bldg As String
-                bldg = CleanString(CStr(rowData(cols.Location)))
-                If bldg <> "" And Not dictBuildings.Exists(bldg) Then
-                    dictBuildings.Add bldg, True
+                Dim bldgOrig  As String
+                Dim bldgClean As String
+                bldgOrig  = Trim(CStr(rowData(cols.Location)))
+                bldgClean = CleanString(bldgOrig)
+                If bldgClean <> "" And Not dictBuildings.Exists(bldgClean) Then
+                    dictBuildings.Add bldgClean, bldgOrig   ' key=clean, value=original
                 End If
             End If
         Next i
@@ -1671,7 +1685,7 @@ Private Function GetSortedBuildingNames(ByVal oRS As Object, _
     Dim key As Variant
     k = 0
     For Each key In dictBuildings.Keys
-        names(k) = CStr(key)
+        names(k) = CStr(dictBuildings(key))   ' return original display name
         k = k + 1
     Next key
 
@@ -1705,7 +1719,7 @@ Private Sub BuildChainLookups(ByVal oRS As Object, ByRef cols As ColumnIndices, 
         ' Filter by building
         Dim loc As String
         loc = CleanString(CStr(rowData(cols.Location)))
-        If loc <> buildingName Then GoTo NextRow
+        If loc <> CleanString(buildingName) Then GoTo NextRow
 
         Dim devID As String
         devID = CStr(rowIDs(i))
@@ -1764,7 +1778,7 @@ Private Function GroupDevicesByLevelModelChain(ByVal oRS As Object, _
 
         Dim loc As String
         loc = CleanString(CStr(rowData(cols.Location)))
-        If loc <> buildingName Then GoTo NextDevRow
+        If loc <> CleanString(buildingName) Then GoTo NextDevRow
 
         Dim devID    As String
         Dim lvlVal   As String
@@ -1789,7 +1803,7 @@ Private Function GroupDevicesByLevelModelChain(ByVal oRS As Object, _
 
         If Not dictGroups.Exists(grpKey) Then
             Dim newColl As Object
-            Set newColl = CreateObject("Collection")
+            Set newColl = New Collection
             dictGroups.Add grpKey, newColl
         End If
 
@@ -1953,6 +1967,7 @@ Private Function UniquePageName(ByVal oDoc As Object, ByVal baseName As String, 
         found = False
         On Error Resume Next
         Dim oTest As Object
+        Set oTest = Nothing
         Set oTest = oDoc.Pages(candidate)
         If Not oTest Is Nothing Then
             found = True
