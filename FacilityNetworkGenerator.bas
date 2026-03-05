@@ -37,7 +37,7 @@ Private Const COL_PROTOCOL As String = "Control Protocol"
 Private Const COL_MEDIA As String = "Network Media Type"
 Private Const COL_SUBTYPE As String = "Device Sub-Type"
 Private Const COL_IDENTIFIER As String = "Identifier"
-Private Const COL_PORT As String = "Port"""
+Private Const COL_PORT As String = "Port"
 ' ----------------------------------------------------------
 ' Layout / geometry constants (inches unless noted)
 ' ----------------------------------------------------------
@@ -192,7 +192,7 @@ Public Sub GenerateFacilityNetworkDiagrams()
     EnableBatchMode False
     oDoc.EndUndoScope nScope, True
 
-    Application.StatusBar = "Facility Network Generator complete."
+    UpdateProgress "Facility Network Generator complete."
     LogStep "GenerateFacilityNetworkDiagrams", "Done"
     Exit Sub
 
@@ -1564,10 +1564,10 @@ End Sub
 Private Sub EnableBatchMode(ByVal enable As Boolean)
     On Error Resume Next
     If enable Then
-        Application.ScreenUpdating     = False
+        Application.ShowChanges        = False
         Application.EventsEnabled      = False
     Else
-        Application.ScreenUpdating     = True
+        Application.ShowChanges        = True
         Application.EventsEnabled      = True
     End If
     On Error GoTo 0
@@ -1626,24 +1626,22 @@ Private Function MapColumns(ByVal oRS As Object) As ColumnIndices
 
     On Error Resume Next
     Dim i As Long
-    Dim colNames As Variant
-    colNames = oRS.DataColumns.GetNames
-
-    If IsArray(colNames) Then
-        For i = LBound(colNames) To UBound(colNames)
-            Dim cn As String
-            cn = CStr(colNames(i))
-            If IsMatch(cn, COL_LOCATION)   Then cols.Location   = i
-            If IsMatch(cn, COL_MODEL)      Then cols.Model      = i
-            If IsMatch(cn, COL_LEVEL)      Then cols.Level      = i
-            If IsMatch(cn, COL_UPSTREAM)   Then cols.Upstream   = i
-            If IsMatch(cn, COL_PROTOCOL)   Then cols.Protocol   = i
-            If IsMatch(cn, COL_MEDIA)      Then cols.Media      = i
-            If IsMatch(cn, COL_SUBTYPE)    Then cols.SubType    = i
-            If IsMatch(cn, COL_IDENTIFIER) Then cols.Identifier = i
-            If IsMatch(cn, COL_PORT)       Then cols.Port       = i
-        Next i
-    End If
+    Dim dc As Object
+    i = 0
+    For Each dc In oRS.DataColumns
+        Dim cn As String
+        cn = dc.Name
+        If IsMatch(cn, COL_LOCATION)   Then cols.Location   = i
+        If IsMatch(cn, COL_MODEL)      Then cols.Model      = i
+        If IsMatch(cn, COL_LEVEL)      Then cols.Level      = i
+        If IsMatch(cn, COL_UPSTREAM)   Then cols.Upstream   = i
+        If IsMatch(cn, COL_PROTOCOL)   Then cols.Protocol   = i
+        If IsMatch(cn, COL_MEDIA)      Then cols.Media      = i
+        If IsMatch(cn, COL_SUBTYPE)    Then cols.SubType    = i
+        If IsMatch(cn, COL_IDENTIFIER) Then cols.Identifier = i
+        If IsMatch(cn, COL_PORT)       Then cols.Port       = i
+        i = i + 1
+    Next dc
     On Error GoTo 0
 
     MapColumns = cols
