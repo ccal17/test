@@ -20,16 +20,24 @@ Private Const visHorzAlign        As Long = 6
 ' ----------------------------------------------------------
 ' Column name constants
 ' ----------------------------------------------------------
-Private Const COL_LOCATION   As String = "Location"
-Private Const COL_MODEL      As String = "Model #"
-Private Const COL_LEVEL      As String = "DoD UFGS Purdue Level"
-Private Const COL_UPSTREAM   As String = "Upstream Device"
-Private Const COL_PROTOCOL   As String = "Control Protocol"
-Private Const COL_MEDIA      As String = "Network Media Type"
-Private Const COL_SUBTYPE    As String = "Device Sub-Type"
+' Private Const COL_LOCATION   As String = "Location"
+' Private Const COL_MODEL      As String = "Model #"
+' Private Const COL_LEVEL      As String = "DoD UFGS Purdue Level"
+' Private Const COL_UPSTREAM   As String = "Upstream Device"
+' Private Const COL_PROTOCOL   As String = "Control Protocol"
+' Private Const COL_MEDIA      As String = "Network Media Type"
+' Private Const COL_SUBTYPE    As String = "Device Sub-Type"
+' Private Const COL_IDENTIFIER As String = "Identifier"
+' Private Const COL_PORT       As String = "Port"
+Private Const COL_LOCATION As String = "Facility Number or Identifier"
+Private Const COL_MODEL As String = "Model #"
+Private Const COL_LEVEL As String = "Architecture Level"
+Private Const COL_UPSTREAM As String = "Upstream Device"
+Private Const COL_PROTOCOL As String = "Control Protocol"
+Private Const COL_MEDIA As String = "Network Media Type"
+Private Const COL_SUBTYPE As String = "Device Sub-Type"
 Private Const COL_IDENTIFIER As String = "Identifier"
-Private Const COL_PORT       As String = "Port"
-
+Private Const COL_PORT As String = "Port"""
 ' ----------------------------------------------------------
 ' Layout / geometry constants (inches unless noted)
 ' ----------------------------------------------------------
