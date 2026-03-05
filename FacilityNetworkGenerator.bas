@@ -1124,9 +1124,7 @@ Private Sub DrawSingleConnector(ByVal oPage As Object, _
 
     Dim mediaStr As String
     mediaStr = ""
-    On Error Resume Next
     mediaStr = SafeCleanString(oFrom.CellsU("Prop.NetworkMedia").ResultStr(""))
-    On Error GoTo 0
 
     Dim styleVal As Long
     styleVal = GetLineStyleForMedia(mediaStr)
@@ -1560,11 +1558,9 @@ Private Sub EnableBatchMode(ByVal enable As Boolean)
     If enable Then
         Application.ScreenUpdating     = False
         Application.EventsEnabled      = False
-        Application.ShowChanges        = False
     Else
         Application.ScreenUpdating     = True
         Application.EventsEnabled      = True
-        Application.ShowChanges        = True
     End If
     On Error GoTo 0
 End Sub
