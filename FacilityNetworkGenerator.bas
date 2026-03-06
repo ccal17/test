@@ -15,7 +15,7 @@ Private Const visLayerLock        As Long = 7
 Private Const visLORouteRightAngle As Long = 1
 Private Const visCharacterStyle   As Long = 2
 Private Const visBold             As Long = 1
-Private Const visHorzAlign        As Long = 6
+Private Const visHorzAlign        As Long = 1
 
 ' ----------------------------------------------------------
 ' Column name constants
@@ -800,6 +800,13 @@ Private Sub DrawOffPageReferences(ByVal dictAllShapes As Object, _
 
     Dim shapeKey As Variant
     For Each shapeKey In dictAllShapes.Keys
+        ' Skip icon shapes, label shapes, and identifier aliases
+        Dim skKeyStr As String
+        skKeyStr = CStr(shapeKey)
+        If Right(skKeyStr, 5) = "_icon" Then GoTo NextShape
+        If Right(skKeyStr, 6) = "_label" Then GoTo NextShape
+        If InStr(skKeyStr, "|") = 0 Then GoTo NextShape
+
         Dim oShape As Object
         Set oShape = dictAllShapes(shapeKey)
         If oShape Is Nothing Then GoTo NextShape
@@ -1043,6 +1050,31 @@ Private Function PlaceDeviceGroup(ByVal oPage As Object, ByVal oStencil As Objec
 
     RegisterShape oBox, groupKey, dictNameToShape
 
+    ' Register each device's identifier as an alias pointing to this shape
+    ' so connector drawing can find shapes by device name
+    Dim di As Long
+    For di = 1 To qty
+        Dim devRec2 As Object
+        Set devRec2 = devList(di)
+        Dim devIdent As String
+        devIdent = SafeCleanString(devRec2("Identifier"))
+        If devIdent <> "" Then
+            RegisterShape oBox, devIdent, dictNameToShape
+        End If
+    Next di
+
+    ' Set shape data properties for connector drawing
+    On Error Resume Next
+    Dim visSectionPropVal As Long
+    visSectionPropVal = 243    ' visSectionProp
+    oBox.AddNamedRow visSectionPropVal, "UpstreamDevice", 0
+    oBox.CellsU("Prop.UpstreamDevice").FormulaU = Chr(34) & SafeString(firstRec("Upstream")) & Chr(34)
+    oBox.AddNamedRow visSectionPropVal, "NetworkMedia", 0
+    oBox.CellsU("Prop.NetworkMedia").FormulaU = Chr(34) & SafeString(firstRec("Media")) & Chr(34)
+    oBox.AddNamedRow visSectionPropVal, "Protocol", 0
+    oBox.CellsU("Prop.Protocol").FormulaU = Chr(34) & SafeString(firstRec("Protocol")) & Chr(34)
+    On Error GoTo 0
+
     PlaceDeviceGroup = xPos + boxW + BOX_LEFT_MARGIN
 End Function
 
@@ -1081,8 +1113,10 @@ Private Sub DrawUpstreamConnectors(ByVal oPage As Object, _
         Dim keyStr As String
         keyStr = CStr(shapeKey)
 
-        ' Skip icon shapes and non-group shapes
+        ' Skip icon shapes, label shapes, and identifier aliases
         If Right(keyStr, 5) = "_icon" Then GoTo NextShape2
+        If Right(keyStr, 6) = "_label" Then GoTo NextShape2
+        If InStr(keyStr, "|") = 0 Then GoTo NextShape2
 
         Dim oShape As Object
         Set oShape = dictNameToShape(keyStr)
@@ -1178,7 +1212,7 @@ Private Sub DrawSwimLaneBox(ByVal oPage As Object, ByVal levelKey As String, _
     Set oLabel = oPage.DrawRectangle(0, lB, LEFT_MARGIN_RESERVE, lT)
     oLabel.Text = GetDetailedLevelLabel(levelKey)
     oLabel.CellsU("FillForegnd").FormulaU   = "RGB(30,60,120)"
-    oLabel.CellsU("FontColor").FormulaU     = "RGB(255,255,255)"
+    oLabel.CellsU("Char.Color").FormulaU   = "RGB(255,255,255)"
     oLabel.CellsU("VerticalAlign").FormulaU = "1"
     oLabel.CellsU("HorzAlign").FormulaU     = CStr(visHorzAlign)
     On Error GoTo 0
@@ -1246,7 +1280,7 @@ Private Sub RegisterShape(ByVal oShape As Object, ByVal key As String, _
 
     On Error Resume Next
     If dictNameToShape.Exists(key) Then
-        dictNameToShape(key) = oShape
+        Set dictNameToShape(key) = oShape
     Else
         dictNameToShape.Add key, oShape
     End If
@@ -1264,7 +1298,9 @@ Private Function GlueConnector(ByVal oConn As Object, _
     GlueConnector = False
     If oConn Is Nothing Or oFrom Is Nothing Or oTo Is Nothing Then Exit Function
     oConn.CellsU("BeginX").GlueTo oFrom.CellsU("PinX")
+    oConn.CellsU("BeginY").GlueTo oFrom.CellsU("PinY")
     oConn.CellsU("EndX").GlueTo   oTo.CellsU("PinX")
+    oConn.CellsU("EndY").GlueTo   oTo.CellsU("PinY")
     GlueConnector = True
     On Error GoTo 0
 End Function
@@ -2242,5 +2278,5 @@ Private Function GetOrAddLayer(ByVal oPage As Object, ByVal layerName As String)
 End Function
 
 Private Sub LogStep(ByVal context As String, ByVal msg As String)
-    Debug.Print "[" & Format(Now(), "HH:MM:SS") & "] " & context & ": " & msg
+    Debug.Print "[" & Format(Now(), "HH:NN:SS") & "] " & context & ": " & msg
 End Sub
