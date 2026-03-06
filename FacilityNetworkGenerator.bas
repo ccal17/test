@@ -15,7 +15,8 @@ Private Const visLayerLock        As Long = 7
 Private Const visLORouteRightAngle As Long = 1
 Private Const visCharacterStyle   As Long = 2
 Private Const visBold             As Long = 1
-Private Const visHorzAlign        As Long = 1
+Private Const visHorzAlignCenter  As Long = 1
+Private Const visSectionProp      As Long = 243
 
 ' ----------------------------------------------------------
 ' Column name constants
@@ -801,6 +802,7 @@ Private Sub DrawOffPageReferences(ByVal dictAllShapes As Object, _
     Dim shapeKey As Variant
     For Each shapeKey In dictAllShapes.Keys
         ' Skip icon shapes, label shapes, and identifier aliases
+        ' (group keys contain "|" separators; identifier aliases do not)
         Dim skKeyStr As String
         skKeyStr = CStr(shapeKey)
         If Right(skKeyStr, 5) = "_icon" Then GoTo NextShape
@@ -1054,10 +1056,10 @@ Private Function PlaceDeviceGroup(ByVal oPage As Object, ByVal oStencil As Objec
     ' so connector drawing can find shapes by device name
     Dim di As Long
     For di = 1 To qty
-        Dim devRec2 As Object
-        Set devRec2 = devList(di)
+        Dim devRec As Object
+        Set devRec = devList(di)
         Dim devIdent As String
-        devIdent = SafeCleanString(devRec2("Identifier"))
+        devIdent = SafeCleanString(devRec("Identifier"))
         If devIdent <> "" Then
             RegisterShape oBox, devIdent, dictNameToShape
         End If
@@ -1065,13 +1067,11 @@ Private Function PlaceDeviceGroup(ByVal oPage As Object, ByVal oStencil As Objec
 
     ' Set shape data properties for connector drawing
     On Error Resume Next
-    Dim visSectionPropVal As Long
-    visSectionPropVal = 243    ' visSectionProp
-    oBox.AddNamedRow visSectionPropVal, "UpstreamDevice", 0
+    oBox.AddNamedRow visSectionProp, "UpstreamDevice", 0
     oBox.CellsU("Prop.UpstreamDevice").FormulaU = Chr(34) & SafeString(firstRec("Upstream")) & Chr(34)
-    oBox.AddNamedRow visSectionPropVal, "NetworkMedia", 0
+    oBox.AddNamedRow visSectionProp, "NetworkMedia", 0
     oBox.CellsU("Prop.NetworkMedia").FormulaU = Chr(34) & SafeString(firstRec("Media")) & Chr(34)
-    oBox.AddNamedRow visSectionPropVal, "Protocol", 0
+    oBox.AddNamedRow visSectionProp, "Protocol", 0
     oBox.CellsU("Prop.Protocol").FormulaU = Chr(34) & SafeString(firstRec("Protocol")) & Chr(34)
     On Error GoTo 0
 
@@ -1114,6 +1114,7 @@ Private Sub DrawUpstreamConnectors(ByVal oPage As Object, _
         keyStr = CStr(shapeKey)
 
         ' Skip icon shapes, label shapes, and identifier aliases
+        ' (group keys contain "|" separators; identifier aliases do not)
         If Right(keyStr, 5) = "_icon" Then GoTo NextShape2
         If Right(keyStr, 6) = "_label" Then GoTo NextShape2
         If InStr(keyStr, "|") = 0 Then GoTo NextShape2
@@ -1214,7 +1215,7 @@ Private Sub DrawSwimLaneBox(ByVal oPage As Object, ByVal levelKey As String, _
     oLabel.CellsU("FillForegnd").FormulaU   = "RGB(30,60,120)"
     oLabel.CellsU("Char.Color").FormulaU   = "RGB(255,255,255)"
     oLabel.CellsU("VerticalAlign").FormulaU = "1"
-    oLabel.CellsU("HorzAlign").FormulaU     = CStr(visHorzAlign)
+    oLabel.CellsU("HorzAlign").FormulaU     = CStr(visHorzAlignCenter)
     On Error GoTo 0
 End Sub
 
